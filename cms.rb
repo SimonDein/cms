@@ -11,6 +11,8 @@ configure do
   set :erb, :escape_html => true
 end
 
+FILE_EXTENSIONS = ['txt', 'md']
+
 #########################################
 ############## METHODS ##################
 #########################################
@@ -44,20 +46,69 @@ def data_path
   end
 end
 
+def join_or(arr)
+  arr.clone.insert(-2, 'or').join(' ')
+end
+
+def extension_exist?(file_name)
+  *base_name, extension = file_name.split('.')
+
+  return false if base_name.size > 1
+  
+  FILE_EXTENSIONS.include?(extension)
+end
+
+def detect_file_name_error(file_name)
+  file_name = file_name.strip
+
+  case
+  when file_name.empty?
+    "A name is required"
+  when !extension_exist?(file_name)
+    "You must provide a file extension of "\
+    "either: #{join_or(FILE_EXTENSIONS)} "\
+    "Example: my_file_name.txt"
+  end
+end
+
+def user_logged_in?
+  session[:user_name]
+end
+
+def require_user_logged_in
+  unless user_logged_in?
+    session[:error] = "You must be signed in to do that"
+    redirect '/'
+  end
+end
+
 #########################################
 ############### ROUTES ##################
 #########################################
-get '/' do 
+# Show all files
+get '/' do
   # appends the wildcard operator to path
   pattern = File.join(data_path, '*')
   # returns an array with basenames of all files in /data
   @files = Dir.glob(pattern).map do |path|
     File.basename(path)
   end
-  
   erb :index, layout: :layout
 end
 
+# View login page
+get '/users/login' do
+  erb :login, layout: :layout
+end
+
+# View the create new file form
+get '/new' do
+  require_user_logged_in
+  
+  erb :new_file, layout: :layout
+end
+
+# View file
 get '/:file_name' do
   file_name = params[:file_name]
   file_path = File.join(data_path, file_name)
@@ -65,19 +116,25 @@ get '/:file_name' do
   if File.exist?(file_path)
     load_file_content(file_name)
   else
-    session[:error] = "The file '#{file_name}' couldn't be found"
+    session[:error] = "The file '#{file_name}' couldn't be found."
     redirect '/'
   end
 end
 
+# Edit existing file
 get '/:file_name/edit' do
+  require_user_logged_in
+  
   @file_name = params[:file_name]
   @file = File.read(File.join(data_path, @file_name))
 
   erb :edit_file, layout: :layout
 end
 
-post '/:file_name/save' do
+# Update existing file
+post '/:file_name/save' do 
+  require_user_logged_in
+  
   file_name = params[:file_name]
   edited_content = params[:edited_text]
 
@@ -86,6 +143,57 @@ post '/:file_name/save' do
     file.write(edited_content)
   end
 
-  session[:success] = "The file #{file_name} has been updated"
+  session[:success] = "The file #{file_name} has been updated."
+  redirect '/'
+end
+
+# Create new file
+post '/new' do
+  require_user_logged_in
+  
+  file_name = params[:file_name]
+  
+  error = detect_file_name_error(file_name)
+  if error
+    session[:error] = error
+    status 422
+    erb :new_file, layout: :layout
+  else
+    File.open(File.join(data_path, file_name), 'w+')
+    session[:success] = "#{file_name} was created"
+    redirect '/'
+  end
+end
+
+# Delete existing file
+post '/:file_name/destroy' do
+  require_user_logged_in
+  
+  file_name = params[:file_name]
+  File.delete(File.join(data_path, file_name))
+
+  session[:success] = "'#{file_name}' was deleted"
+  redirect '/'
+end
+
+# Login user
+post '/users/login' do
+  @user_name = params[:user_name]
+  @password = params[:password]
+
+  if @user_name == 'admin' && @password == 'secret'
+    session[:user_name] = @user_name
+    session[:success] = "Welcome!"
+    redirect '/'
+  else
+    session[:error] = "Invalid credentials"
+    erb :login, layout: :layout
+  end
+end
+
+# Logout user
+post '/users/logout' do
+  session.clear
+  session[:success] = "You have been signed out."
   redirect '/'
 end

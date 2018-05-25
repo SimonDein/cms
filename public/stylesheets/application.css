@@ -1,7 +1,7 @@
 body { 
   font-size: 20px;
   font-family: Helvetica, sans-serif, Arial;
-  color: grey;
+  color: #444444;
   background: #f9f9f9;
   padding-top: 60px;
   padding-left: 30px;
@@ -30,10 +30,23 @@ p.success {
 }
 
 a {
+  display: inline-block;
   text-decoration: none;
   color: #2ca096;
 }
 
 a:hover {
   color: #08897e;
+}
+
+form.inline {
+  display: inline;
+}
+
+input.inline-block {
+  display: block;
+}
+
+p.user-status {
+  font-size: 14px;
 }

@@ -1,0 +1,15 @@
+<% if session[:success] %>
+    <p class="success"><%= session.delete(:success) %></p>
+<% end %>
+
+<% if session[:error] %>
+    <p class="error"><%= session.delete(:error) %></p>
+<% end %>
+
+<form action="/users/login" method="post">
+  Username:<br>
+  <input class="inline-block" name="user_name" value="<%= @user_name %>">
+  Password:<br>
+  <input class="inline-block" name="password" value="<%= @password %>">
+  <button type="submit">Log In</button>
+</form>

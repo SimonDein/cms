@@ -8,7 +8,28 @@
 
 <ul>
   <% @files.each do |file| %>
-    <a href="/<%= file %>"><li><%= file %></li></a>
-    <a href="/<%= file %>/edit">Edit</a>
+    <li>
+      <a href="/<%= file %>"><%= file %></a>
+      <a href="/<%= file %>/edit">Edit</a>
+      <form class="inline" action="/<%= file %>/destroy" method="post">
+        <button type="submit">Delete</button>
+      </form>
+    </li>
   <% end %>
+
+  <a href="/new">New Document</a>
 </ul>
+
+
+<% if session[:user_name] %>
+  <form action="/users/logout" method="post">
+    <p class="user-status">
+      Signed in as '<%= session[:user_name] %>'
+      <button type="submit">Log Out</button>
+    </p>
+  </form>
+<% else %>
+  <p class="user-status">
+    <a href="/users/login">Login</a>
+  </p>
+<% end %>
