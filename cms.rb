@@ -1,8 +1,10 @@
 require 'sinatra'
 require 'sinatra/reloader' if development?
 require 'sinatra/contrib'
-require 'redcarpet'
+require 'redcarpet' # parser for markdown to html
 require 'pry'
+require 'yaml'
+require 'bcrypt' # password hashing lib
 
 configure do
   disable :logging # to not show double entries in terminal
@@ -79,6 +81,27 @@ def require_user_logged_in
   unless user_logged_in?
     session[:error] = "You must be signed in to do that"
     redirect '/'
+  end
+end
+
+def load_user_credentials
+  credentials_path = if ENV['RACK_ENV'] == 'test'
+                      File.expand_path('../test/users.yaml' ,__FILE__)
+                    else
+                      File.expand_path('..//users.yaml' ,__FILE__)
+                    end
+
+  YAML.load_file(credentials_path)
+end
+
+def valid_password?(user_name, password)
+  credentials = load_user_credentials
+  
+  if credentials.has_key?(user_name)
+    bcrypt_pass = BCrypt::Password.new(credentials[user_name])
+    bcrypt_pass == password
+  else
+    false
   end
 end
 
@@ -181,7 +204,8 @@ post '/users/login' do
   @user_name = params[:user_name]
   @password = params[:password]
 
-  if @user_name == 'admin' && @password == 'secret'
+  # if credentials[@user_name] == @password
+  if valid_password?(@user_name, @password)
     session[:user_name] = @user_name
     session[:success] = "Welcome!"
     redirect '/'

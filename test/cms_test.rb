@@ -166,7 +166,7 @@ class CMSTest < Minitest::Test
 
   def test_logging_in_with_invalid_crentials
     # test with valid username and invalid password
-    post '/users/login', {user_name: 'admin', password: 'invalid_pass'}
+    post '/users/login', {user_name: 'sandra', password: 'invalid_pass'}
     assert_equal(200, last_response.status)
     assert_includes(last_response.body, "Invalid credentials")
     assert_includes(last_response.body, 'Username:')
@@ -179,13 +179,15 @@ class CMSTest < Minitest::Test
   end
 
   def test_logging_in_with_correct_credentials
-    post '/users/login', {user_name: 'admin', password: 'secret'}
+    post '/users/login', {user_name: 'bob', password: 'apassword'}
+    
+    
     assert_equal(302, last_response.status)
     assert_equal("Welcome!", session[:success])
 
     get last_response['Location']
     assert_includes(last_response.body, "Log Out")
-    assert_includes(last_response.body, "Signed in as 'admin'")
+    assert_includes(last_response.body, "Signed in as 'bob'")
   end
 
   def test_log_out
