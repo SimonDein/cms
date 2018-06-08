@@ -1,23 +1,18 @@
-<% if session[:error] %>
-    <p class="error"><%= session.delete(:error) %></p>
-<% end %>
-
-<% if session[:success] %>
-    <p class="success"><%= session.delete(:success) %></p>
-<% end %>
-
 <ul>
   <% @files.each do |file| %>
     <li>
       <a href="/<%= file %>"><%= file %></a>
       <a href="/<%= file %>/edit">Edit</a>
+      <form class="inline" action="/<%= file %>/copy" method="post">
+        <button type="submit"> Make Copy</button>
+      </form>
       <form class="inline" action="/<%= file %>/destroy" method="post">
         <button type="submit">Delete</button>
       </form>
     </li>
   <% end %>
 
-  <a href="/new">New Document</a>
+  <a href="/new">+ New Document</a>
 </ul>
 
 
@@ -31,5 +26,8 @@
 <% else %>
   <p class="user-status">
     <a href="/users/login">Login</a>
+  </p>
+  <p class="user-status">
+    <a href="/users/sign_up">Sign Up</a>
   </p>
 <% end %>

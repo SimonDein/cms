@@ -4,6 +4,14 @@
   <link rel="stylesheet" href="/stylesheets/application.css" type='text/css'>
 </head>
 <body>
+  <% if session[:success] %>
+    <p class="success"><%= session.delete(:success) %></p>
+  <% end %>
+
+  <% if session[:error] %>
+    <p class="error"><%= session.delete(:error) %></p>
+  <% end %>
+
   <%== yield %>
 </body>
 </html>

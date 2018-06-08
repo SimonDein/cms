@@ -1,5 +1,10 @@
---- # users
-# thunderstruck, whokilledthecat, idid
-simon: $2a$10$EsFesG5rWmP0TgT5USswjeJIlLs8psDcm88oM.rEh/eTPPRd2eD6q
-angela: $2a$10$FyXnc7cItSnCyJ.hrh7MleL4KmyMsJI9/M.K3ms2sGip8el2TTfRm
-dwight: $2a$10$MYD8d1fJmni5w0y3lN3QHO4odRB/soSzzzUOtP.8gwQ3wATOiytbS
+---
+simon: "$2a$10$EsFesG5rWmP0TgT5USswjeJIlLs8psDcm88oM.rEh/eTPPRd2eD6q"
+angela: "$2a$10$FyXnc7cItSnCyJ.hrh7MleL4KmyMsJI9/M.K3ms2sGip8el2TTfRm"
+dwight: "$2a$10$MYD8d1fJmni5w0y3lN3QHO4odRB/soSzzzUOtP.8gwQ3wATOiytbS"
+Blop: !ruby/string:BCrypt::Password
+  str: "$2a$10$n6yQW0NCunxTBy3LrdYwYusdj5lhk6AyCxXsp9IZUfRQOpcFXpCEW"
+  version: 2a
+  cost: 10
+  salt: "$2a$10$n6yQW0NCunxTBy3LrdYwYu"
+  checksum: sdj5lhk6AyCxXsp9IZUfRQOpcFXpCEW

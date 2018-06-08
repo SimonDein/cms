@@ -5,6 +5,7 @@ require 'redcarpet' # parser for markdown to html
 require 'pry'
 require 'yaml'
 require 'bcrypt' # password hashing lib
+require 'fileutils'
 
 configure do
   disable :logging # to not show double entries in terminal
@@ -84,12 +85,15 @@ def require_user_logged_in
   end
 end
 
+def credentials_path
+  if ENV['RACK_ENV'] == 'test'
+    File.expand_path('../test/users.yaml' ,__FILE__)
+  else
+    File.expand_path('..//users.yaml' ,__FILE__)
+  end
+end
+
 def load_user_credentials
-  credentials_path = if ENV['RACK_ENV'] == 'test'
-                      File.expand_path('../test/users.yaml' ,__FILE__)
-                    else
-                      File.expand_path('..//users.yaml' ,__FILE__)
-                    end
 
   YAML.load_file(credentials_path)
 end
@@ -105,17 +109,40 @@ def valid_password?(user_name, password)
   end
 end
 
+def all_files
+  # appends the wildcard operator to path
+  pattern = File.join(data_path, '*')
+  
+  # returns an array with basenames of all files in /data
+  Dir.glob(pattern).map do |path|
+    File.basename(path)
+  end
+end
+
+def detect_sign_up_error(user_name, password)
+  user_name = user_name.strip
+  password = password.strip
+  credentials = load_user_credentials
+
+  case
+  when user_name.empty?
+    'A username is required'
+  when credentials.has_key?(user_name)
+    'Sorry - the username has already been taken'
+  when password.empty?
+    'A password is required'
+  when password.size < 6
+    'The password must consist of at least 6 characters (numbers, letters or symbols)'
+  end
+end
+
 #########################################
 ############### ROUTES ##################
 #########################################
 # Show all files
 get '/' do
-  # appends the wildcard operator to path
-  pattern = File.join(data_path, '*')
-  # returns an array with basenames of all files in /data
-  @files = Dir.glob(pattern).map do |path|
-    File.basename(path)
-  end
+  @files = all_files
+
   erb :index, layout: :layout
 end
 
@@ -152,6 +179,11 @@ get '/:file_name/edit' do
   @file = File.read(File.join(data_path, @file_name))
 
   erb :edit_file, layout: :layout
+end
+
+# Sign up page
+get '/users/sign_up' do
+  erb :sign_up, layout: :layout
 end
 
 # Update existing file
@@ -220,4 +252,39 @@ post '/users/logout' do
   session.clear
   session[:success] = "You have been signed out."
   redirect '/'
+end
+
+# Make a copy file from existing file
+post '/:file_name/copy' do
+  file_name, file_extension = params[:file_name].split('.')
+  version = detect_version_number(file_name)
+
+  new_file_name = file_name + '_copy.' + file_extension
+  
+  original_file_path = File.join(data_path, params[:file_name])
+  copied_file_path = File.join(data_path,  new_file_name)
+
+  FileUtils.copy_file(original_file_path, copied_file_path)
+  session[:success] = "a copy of '#{file_name}' was created"
+  redirect '/'
+end
+
+post '/users/sign_up' do
+  user_name = params[:new_user_name]
+  password =  params[:new_password]
+
+  credentials = load_user_credentials
+
+  error = detect_sign_up_error(user_name, password)
+  if error
+    session[:error] = error
+    erb :sign_up, layout: :layout
+  else
+    encrypted_password = BCrypt::Password.create(password)
+    credentials.store(user_name, encrypted_password)
+
+    File.open(credentials_path, 'w') { |f| YAML.dump(credentials, f) }
+    session[:success] = "You've successfully signed up.\nPlease login to proceed."
+    redirect '/users/login'
+  end
 end
